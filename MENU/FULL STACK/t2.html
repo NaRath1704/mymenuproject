@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Camera Photo Capture</title>
+    <style>
+        /* Enhanced Light Color Theme */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #0056b3;
+            margin-bottom: 24px;
+            font-size: 2em;
+        }
+
+        video, canvas {
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin: 5px;
+            outline: none;
+        }
+
+        #startCamera {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #startCamera:hover {
+            background-color: #218838;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        #stopCamera {
+            background-color: #e81123;
+            color: white;
+        }
+
+        #stopCamera:hover {
+            background-color: #c50f1f;
+            box-shadow: 0 4px 12px rgba(232, 17, 35, 0.3);
+        }
+
+        #capture {
+            background-color: #0078D7;
+            color: white;
+        }
+
+        #capture:hover {
+            background-color: #005ba1;
+            box-shadow: 0 4px 12px rgba(0, 120, 215, 0.3);
+        }
+
+        #save {
+            background-color: #ffcc00;
+            color: #333;
+        }
+
+        #save:hover {
+            background-color: #e6b800;
+            box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+        }
+
+        #photo {
+            margin-top: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: none;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Popup Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+            animation: slideIn 0.5s;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+         /* Updated Button Style */
+         #openModal {
+            background-color: #0078D7; /* Adjust color to make it stand out */
+            color: white;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            margin: 5px;
+            outline: none;
+        }
+    
+        #openModal:hover {
+            background-color: #005ba1; /* Darker shade for hover effect */
+            box-shadow: 0 4px 12px rgba(0, 120, 215, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <button id="openModal" class="button">Open Camera</button>
+
+    <!-- Modal -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeModal">&times;</span>
+            <h1>Enhanced Camera Photo Capture</h1>
+            <video id="video" autoplay style="display:none;"></video>
+            <canvas id="canvas" style="display:none;"></canvas>
+            <img id="photo" alt="Captured Photo">
+            <div>
+                <button id="startCamera">Start Camera</button>
+                <button id="stopCamera" disabled>Stop Camera</button>
+                <button id="capture" disabled>Capture Photo</button>
+                <button id="save" style="display:none;">Save Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const startCameraButton = document.getElementById('startCamera');
+        const stopCameraButton = document.getElementById('stopCamera');
+        const captureButton = document.getElementById('capture');
+        const canvas = document.getElementById('canvas');
+        const photo = document.getElementById('photo');
+        const saveButton = document.getElementById('save');
+        const openModalButton = document.getElementById('openModal');
+        const closeModalButton = document.getElementById('closeModal');
+        const cameraModal = document.getElementById('cameraModal');
+        let stream = null;
+
+        // Open the modal
+        openModalButton.addEventListener('click', () => {
+            cameraModal.style.display = 'flex';
+        });
+
+        // Close the modal
+        closeModalButton.addEventListener('click', () => {
+            cameraModal.style.display = 'none';
+            stopCamera();  // Stop the camera when closing the modal
+        });
+
+        // Start the camera
+        startCameraButton.addEventListener('click', async () => {
+            photo.style.display = 'none';
+            photo.src = '';
+            saveButton.style.display = 'none';
+
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                video.style.display = 'block';
+                startCameraButton.disabled = true;
+                stopCameraButton.disabled = false;
+                captureButton.disabled = false;
+            } catch (error) {
+                console.error('Error accessing the camera:', error);
+            }
+        });
+
+        // Stop the camera
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.style.display = 'none';
+                startCameraButton.disabled = false;
+                stopCameraButton.disabled = true;
+                captureButton.disabled = true;
+            }
+        }
+
+        stopCameraButton.addEventListener('click', stopCamera);
+
+        // Capture photo and turn off camera
+        captureButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            photo.src = dataUrl;
+            photo.style.display = 'block';
+            saveButton.style.display = 'inline-block';
+
+            stopCamera();  // Turn off the camera automatically after capturing the photo
+        });
+
+        // Save the captured photo
+        saveButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = photo.src;
+            link.download = 'captured-photo.png';
+            link.click();
+        });
+    </script>
+</body>
+</html>

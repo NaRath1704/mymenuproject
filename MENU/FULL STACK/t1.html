@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech to Text Converter</title>
+    <style>
+        /* Light Color Theme */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #0078D7;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #start {
+            background-color: #0078D7;
+            color: white;
+        }
+
+        #start:hover {
+            background-color: #005ba1;
+            box-shadow: 0 2px 8px rgba(0, 120, 215, 0.3);
+        }
+
+        #stop {
+            background-color: #e81123;
+            color: white;
+        }
+
+        #stop:hover {
+            background-color: #c50f1f;
+            box-shadow: 0 2px 8px rgba(232, 17, 35, 0.3);
+        }
+
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #fafafa;
+            min-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap; /* Preserve whitespace */
+        }
+
+        /* Popup Styles */
+        #popup {
+            display: none;
+        
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            display: none;
+        }
+
+        .close {
+            color: #868e96; /* Light gray color */
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #343a40; /* Darker gray for hover effect */
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .popup-overlay.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="openPopup" class="button">Open Speech to Text Converter</button>
+
+    <!-- Popup Structure -->
+    <div id="popup">
+        <span class="close">&times;</span>
+        <h1>Speech to Text Converter</h1>
+        <button id="start">Start Listening</button>
+        <button id="stop" disabled>Stop Listening</button>
+        <div id="output">Your speech will appear here...</div>
+        <!-- <button id="closePopup" class="button">Close</button> -->
+    </div>
+    <div id="popupOverlay" class="popup-overlay"></div>
+
+    <script>
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const output = document.getElementById('output');
+        const popup = document.getElementById('popup');
+        const popupOverlay = document.getElementById('popupOverlay');
+        const openPopupButton = document.getElementById('openPopup');
+        //const closePopupButton = document.getElementById('closePopup');
+        const closeButton = document.querySelector('.close');
+
+        let recognition;
+
+        // Check if the browser supports the Web Speech API
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+
+            recognition.continuous = true; // Continue recognizing even if there are pauses
+            recognition.interimResults = true; // Show interim results
+
+            recognition.onstart = () => {
+                startButton.disabled = true;
+                stopButton.disabled = false;
+                output.textContent = 'Listening...';
+            };
+
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                output.textContent = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                output.textContent = 'Error occurred in recognition: ' + event.error;
+            };
+
+            recognition.onend = () => {
+                startButton.disabled = false;
+                stopButton.disabled = true;
+            };
+
+            startButton.addEventListener('click', () => {
+                recognition.start();
+            });
+
+            stopButton.addEventListener('click', () => {
+                recognition.stop();
+            });
+        } else {
+            output.textContent = 'Your browser does not support the Web Speech API.';
+            startButton.disabled = true;
+        }
+
+        // Open the popup
+        openPopupButton.addEventListener('click', () => {
+            popup.style.display = 'block';
+            popupOverlay.classList.add('show');
+        });
+
+        // Close the popup
+        closeButton.addEventListener('click', () => {
+            popup.style.display = 'none';
+            popupOverlay.classList.remove('show');
+            if (recognition) {
+                recognition.stop(); // Stop recognition when closing the popup
+            } 
+        }); 
+    </script>
+</body>
+</html>

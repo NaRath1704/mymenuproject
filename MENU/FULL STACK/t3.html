@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera Stream</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9ecef; /* Light gray background */
+            color: #495057; /* Dark gray text color */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #343a40; /* Darker gray for the header */
+            margin-bottom: 20px;
+        }
+
+        #videoContainer {
+            position: relative;
+            width: 100%;
+            max-width: 640px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #ffffff; /* White background for video container */
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 12px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .button {
+            background-color: #007bff; /* Primary blue color */
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        .button:hover {
+            background-color: #0056b3; /* Darker blue for hover effect */
+            transform: scale(1.05); /* Slightly enlarge button on hover */
+        }
+
+        .button:active {
+            transform: scale(0.95); /* Slightly shrink button on click */
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0, 0, 0, 0.3); /* Black w/ opacity */
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background-color: #ffffff; /* White background for modal content */
+            margin: 10% auto; /* Center the modal */
+            padding: 20px;
+            border: 1px solid #dee2e6; /* Light gray border */
+            width: 80%; /* Could be more or less, depending on screen size */
+            max-width: 700px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        /* The Close Button */
+        .close {
+            color: #868e96; /* Light gray color */
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #343a40; /* Darker gray for hover effect */
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Live Camera Stream</h1>
+    <!-- Button to open the modal -->
+    <button class="button" id="openModalButton">Open Camera Stream</button>
+
+    <!-- The Modal -->
+    <div id="myModal" class="modal">
+        <!-- Modal content -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="videoContainer">
+                <video id="video" autoplay playsinline></video>
+            </div>
+            <div class="controls">
+                <button class="button" id="startButton">Start Stream</button>
+                <button class="button hidden" id="stopButton">Stop Stream</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const modal = document.getElementById('myModal');
+        const openModalButton = document.getElementById('openModalButton');
+        const closeButton = document.querySelector('.close');
+        let stream;
+
+        // Function to start video stream
+        function startVideoStream() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(mediaStream => {
+                        stream = mediaStream;
+                        video.srcObject = stream;
+                        startButton.classList.add('hidden');
+                        stopButton.classList.remove('hidden');
+                    })
+                    .catch(err => {
+                        console.error('Error accessing camera: ', err);
+                        alert('Could not access camera. Please ensure you have given permission.');
+                    });
+            } else {
+                alert('getUserMedia is not supported in your browser.');
+            }
+        }
+
+        // Function to stop video stream
+        function stopVideoStream() {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                startButton.classList.remove('hidden');
+                stopButton.classList.add('hidden');
+            }
+        }
+
+        // Open the modal
+        openModalButton.onclick = function() {
+            modal.style.display = "block";
+        }
+
+        // Close the modal
+        closeButton.onclick = function() {
+            modal.style.display = "none";
+            stopVideoStream();
+        }
+
+        // Close the modal if the user clicks outside of it
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+                stopVideoStream();
+            }
+        }
+
+        startButton.addEventListener('click', startVideoStream);
+        stopButton.addEventListener('click', stopVideoStream);
+    </script>
+</body>
+</html>
